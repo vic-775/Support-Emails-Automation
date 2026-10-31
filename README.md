@@ -1,6 +1,6 @@
 # AI Email Support Agent with a Human Safety Net
 
-> **Customers wait hours for answers your FAQ already has. Bots that answer everything send wrong answers about refunds. This project does neither.**
+> **Customers wait hours for answers your FAQ already has. Bots that answer everything sometimes send wrong answers. This project does neither.**
 > It replies instantly when your knowledge base can answer, and when it can't, it pulls in a human on Slack, drafts the reply *with* them, and only sends what they approve.
 
 Built with **n8n**, **Gmail**, **Pinecone Assistant (RAG)**, **Slack**, **Airtable** and **Postgres**. Each tool can be swapped for an alternative (see the tech stack).
