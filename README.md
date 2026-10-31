@@ -161,5 +161,7 @@ Send yourself an email in each of these cases and watch the result:
 #### Airtable Data
 ![Airtable Data](docs/airtable_data.png)
 
-#### Airtable Interface or Data
+#### Airtable Interface or DashBoard
 ![Airtable Interface](docs/airtable_interface.png)
+
+*All data displayed is test data.*
