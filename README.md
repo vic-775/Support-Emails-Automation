@@ -39,18 +39,6 @@ The customer never gets an unreviewed answer on a sensitive topic, and the human
 
 ![Architecture overview](docs/email%20architecture.drawio.png)
 
-*Export `email_support_automation_architecture.drawio` to PNG and place it at `docs/architecture.png`.*
-
-```
-Gmail ──► [1] Email Support Agent ──► customer reply
-              │        ▲
-   Pinecone ◄─┘        │ resumes the paused case
-   (FAQ search)        │
-                  [2] Slack Interaction Handler ◄── Slack (clicks and replies)
-
-Google Drive FAQ ──► [3] Knowledge Base Ingestion ──► Pinecone
-```
-
 ### Workflow 1: Email Support Agent (main)
 1. **Receive and classify.** A Gmail trigger polls every minute. The newest message is separated from quoted history, and an LLM decides whether it is a support request (newsletters and spam are ignored).
 2. **Retrieve knowledge.** Pinecone Assistant returns FAQ snippets. Snippets scoring below 0.4 are dropped and the best three are kept.
