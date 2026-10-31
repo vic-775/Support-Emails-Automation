@@ -1,4 +1,4 @@
-# 📬 AI Email Support Agent with a Human Safety Net
+# AI Email Support Agent with a Human Safety Net
 
 > **Customers wait hours for answers your FAQ already has. Bots that answer everything send wrong answers about refunds. This project does neither.**
 > It replies instantly when your knowledge base can answer, and when it can't, it pulls in a human on Slack, drafts the reply *with* them, and only sends what they approve.
@@ -12,7 +12,7 @@ Built with **n8n**, **Gmail**, **Pinecone Assistant (RAG)**, **Slack**, **Airtab
 
 ---
 
-## 🎯 The problem
+## The problem
 
 Small support teams hit the same wall:
 
@@ -20,7 +20,7 @@ Small support teams hit the same wall:
 - A fully automatic bot is risky. One wrong answer about a refund, a double charge or a legal complaint costs more than a slow reply.
 - When an AI is unsure, the usual fallback is "forward it to a person", which loses context and the customer waits anyway.
 
-## ✅ The solution
+## The solution
 
 Three connected n8n workflows that split the work by risk:
 
@@ -35,7 +35,7 @@ The customer never gets an unreviewed answer on a sensitive topic, and the human
 
 ---
 
-## 🧭 Architecture
+## Architecture
 
 ![Architecture overview](docs/architecture.png)
 
@@ -68,7 +68,7 @@ Run manually whenever the FAQ changes. It downloads the FAQ from Google Drive as
 
 ---
 
-## ✨ Features
+## Features
 
 - **Safe by design.** Risky topics always go to a human, whatever the model says.
 - **Answers only from your FAQ.** No invented policies, prices or deadlines.
@@ -78,7 +78,7 @@ Run manually whenever the FAQ changes. It downloads the FAQ from Google Drive as
 - **Multi-turn safe.** A case ID links the email, the Slack thread and the Airtable record.
 - **Timeout handling.** Stale cases don't hang forever.
 
-## 🧰 Tech stack
+## Tech stack
 
 | Layer | Used here | Other options that would work |
 |---|---|---|
@@ -94,7 +94,7 @@ Run manually whenever the FAQ changes. It downloads the FAQ from Google Drive as
 
 ---
 
-## 📁 Repository structure
+## Repository structure
 
 ```
 .
@@ -111,7 +111,7 @@ Run manually whenever the FAQ changes. It downloads the FAQ from Google Drive as
 
 ---
 
-## 🚀 Setup
+## Setup
 
 ### 1. Prerequisites
 - n8n instance (self-hosted or cloud) that is reachable from the internet
