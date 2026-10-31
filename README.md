@@ -37,7 +37,7 @@ The customer never gets an unreviewed answer on a sensitive topic, and the human
 
 ## Architecture
 
-![Architecture overview](docs/email architecture.drawio.png)
+![Architecture overview](docs/email%20architecture.drawio.png)
 
 *Export `email_support_automation_architecture.drawio` to PNG and place it at `docs/architecture.png`.*
 
