@@ -84,18 +84,14 @@ Run manually whenever the FAQ changes. It downloads the FAQ from Google Drive as
 
 ## Repository structure
 
-```
 .
-├── workflows/
-│   ├── 01-email-support-agent.json
-│   ├── 02-slack-interaction-handler.json
-│   └── 03-knowledge-base-ingestion.json
 ├── docs/
-│   ├── email_support_automation_architecture.drawio
-│   ├── email_support_workflow_detail.drawio
-│   └── architecture.png
+│   ├── email architecture.drawio.png
+│   ├── inside_slack.png
+│   ├── inside_slack_thread.png
+│   ├── airtable_data.png
+│   └── airtable_interface.png
 └── README.md
-```
 
 ---
 
@@ -155,3 +151,15 @@ Send yourself an email in each of these cases and watch the result:
 | Reply in the Slack thread asking for changes | Old draft marked rejected, new draft appears |
 | Click **Approve and send** | Email sent, button replaced, case closed |
 | Click the old button again | "Case already closed" message |
+
+#### Inside Slack
+![Inside Slack](docs/inside_slack.png)
+
+#### Inside Slack Thread
+![Inside Slack Thread](docs/inside_slack_thread.png)
+
+#### Airtable Data
+![Airtable Data](docs/airtable_data.png)
+
+#### Airtable Interface or Data
+![Airtable Interface](docs/airtable_interface.png)
