@@ -1,0 +1,325 @@
+{
+  "name": "Email Agent & Human",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "4d461a08-492a-461a-8bf1-ad51fa4b7699",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -96,
+        0
+      ],
+      "id": "973b5db8-f0cd-459b-9b56-0b1fb93ea444",
+      "name": "Webhook",
+      "webhookId": "4d461a08-492a-461a-8bf1-ad51fa4b7699"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.body.challenge }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        128,
+        0
+      ],
+      "id": "152098a7-6363-4df5-85bc-94a187969a6f",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appr9hT4ZoVvSy135",
+          "mode": "list",
+          "cachedResultName": "Email support Automations data",
+          "cachedResultUrl": "https://airtable.com/appr9hT4ZoVvSy135"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl4vuzUJoq29C48h",
+          "mode": "list",
+          "cachedResultName": "Automation data",
+          "cachedResultUrl": "https://airtable.com/appr9hT4ZoVvSy135/tbl4vuzUJoq29C48h"
+        },
+        "filterByFormula": "==AND({thread_ts} = '{{ $json.thread_ts }}', {Channel} = '{{ $json.channel }}', {Status} = 'open')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        848,
+        -16
+      ],
+      "id": "57da2e64-0373-4614-8d5a-d86464576427",
+      "name": "Search record: Get resume URL",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "FxX3U5vNTpwKfAgL",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "94d4fd8a-40ef-437c-95e6-83ece98cc255",
+              "leftValue": "={{ $json.fields?.resume_url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1136,
+        -16
+      ],
+      "id": "4097887b-cf61-442b-acef-abe77651bdec",
+      "name": "Open case found?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  channel: $('Extract Original Text').item.json.channel,\n  thread_ts: $('Extract Original Text').item.json.thread_ts,\n  text: \"This case is already closed, so I can't pick up your reply. If you need something else, please start a new request.\"\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1520,
+        80
+      ],
+      "id": "dce08cc1-b961-49f5-a52c-d713a5e51785",
+      "name": "Tell Human: case closed",
+      "credentials": {
+        "slackApi": {
+          "id": "oftRdMB5u8mvNCHp",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $json.body || {};\nconst h = $json.headers || {};\n\nlet kind = 'ignore';\nlet valid = false;\nlet out = {};\n\nif (b.payload) {\n  // Button click: form-encoded, body.payload is a JSON string\n  try {\n    const p = typeof b.payload === 'string' ? JSON.parse(b.payload) : b.payload;\n    const a = (p.actions || [])[0] || {};\n    let val = {};\n    try { val = JSON.parse(a.value || '{}'); } catch (e) {}\n\n    if (p.type === 'block_actions' && a.action_id === 'approve_draft' && p.user && p.user.id) {\n      kind = 'click';\n      valid = true;\n\n      // Keep the draft, drop the button, add a status line\n      const kept = ((p.message && p.message.blocks) || []).filter(x => x.type !== 'actions');\n      const approvedBlocks = kept.concat([{\n        type: 'context',\n        elements: [{ type: 'mrkdwn', text: ':white_check_mark: Approved by <@' + p.user.id + '>. Sending to the customer.' }]\n      }]);\n\n      out = {\n        user: p.user.id,\n        channel: (p.channel && p.channel.id) || (p.container && p.container.channel_id),\n        thread_ts: (p.container && p.container.thread_ts) || (p.message && p.message.thread_ts),\n        message_ts: p.container && p.container.message_ts,\n        reply: '',\n        caseId: val.caseId,\n        version: val.version,\n        response_url: p.response_url,\n        approvedBlocks\n      };\n    }\n  } catch (e) {}\n} else {\n  // Thread reply: Slack event\n  const e = b.event || {};\n  // The bot's own user ID, supplied by Slack on every event\n  const botUserId = ((b.authorizations || []).find(x => x.is_bot) || {}).user_id;\n\n  if (\n    b.type === 'event_callback' &&\n    e.type === 'message' &&\n    !e.bot_id &&\n    !e.subtype &&\n    e.thread_ts &&\n    e.user &&\n    e.user !== botUserId &&\n    !h['x-slack-retry-num']\n  ) {\n    kind = 'reply';\n    valid = true;\n    out = {\n      user: e.user,\n      channel: e.channel,\n      thread_ts: e.thread_ts,\n      message_ts: e.ts,\n      reply: String(e.text || '').replace(/<@[A-Z0-9]+>/g, '').trim(),\n      event_id: b.event_id\n    };\n  }\n}\n\nreturn { json: { valid, kind, ...out } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        0
+      ],
+      "id": "ce15d399-3cf2-4b3b-9381-11763f4e15ef",
+      "name": "Extract"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        0
+      ],
+      "name": "IF valid reply or click",
+      "id": "49a3b6c5-f84e-4e39-8c33-5808c1c5e759"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.fields.resume_url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  approved: $('Extract').item.json.kind === 'click',\n  reply: $('Extract').item.json.reply,\n  user: $('Extract').item.json.user,\n  channel: $('Extract').item.json.channel,\n  thread_ts: $('Extract').item.json.thread_ts,\n  message_ts: $('Extract').item.json.message_ts\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1408,
+        -160
+      ],
+      "id": "f4feef54-40eb-427e-87fe-fa753ccfa946",
+      "name": "Resume Agent - Insufficient or No Info Workflow"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "interviews-revealed-species-sperm.trycloudflare.com",
+            "user-agent": "Slackbot 1.0 (+https://api.slack.com/robots)",
+            "content-length": "3393",
+            "accept": "application/json,*/*",
+            "accept-encoding": "gzip",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "34.229.227.39",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "US",
+            "cf-ray": "a53352f179be292b-IAD",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "bb01d81b-bb53-49bc-a8b7-ea7360cfc51d",
+            "cf-worker": "trycloudflare.com",
+            "connection": "keep-alive",
+            "content-type": "application/x-www-form-urlencoded",
+            "x-forwarded-for": "34.229.227.39",
+            "x-forwarded-proto": "https",
+            "x-slack-request-timestamp": "1793456673",
+            "x-slack-signature": "v0=769cc8b1b102c6b650b325b61d03c7620d4e6c06d944b158f4201cbc334d0465"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "payload": "{\"type\":\"block_actions\",\"user\":{\"id\":\"U0A3WPM4M9N\",\"username\":\"atimangovictoria775\",\"name\":\"atimangovictoria775\",\"team_id\":\"T0A3FC64J3B\"},\"api_app_id\":\"A0CDBPJJZB2\",\"token\":\"NAh2d8t4MAcBsomPyycBiyLf\",\"container\":{\"type\":\"message\",\"message_ts\":\"1793456652.980149\",\"channel_id\":\"D0CCH78532N\",\"is_ephemeral\":false,\"thread_ts\":\"1793456561.253899\"},\"trigger_id\":\"12463230552003.10117414154113.25b0b4b76b74c1b52f93eaf414f87140\",\"team\":{\"id\":\"T0A3FC64J3B\",\"domain\":\"victory-ie37195\"},\"enterprise\":null,\"is_enterprise_install\":false,\"channel\":{\"id\":\"D0CCH78532N\",\"name\":\"directmessage\"},\"message\":{\"user\":\"U0CC21JFHAT\",\"type\":\"message\",\"ts\":\"1793456652.980149\",\"bot_id\":\"B0CCC41MJKF\",\"app_id\":\"A0CDBPJJZB2\",\"text\":\"Draft reply ready for approval\",\"team\":\"T0A3FC64J3B\",\"thread_ts\":\"1793456561.253899\",\"parent_user_id\":\"U0CC21JFHAT\",\"blocks\":[{\"type\":\"section\",\"block_id\":\"CvrF4\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Draft reply for the customer. Approve to send it as it is, or reply in this thread to ask for changes.\",\"verbatim\":false}},{\"type\":\"section\",\"block_id\":\"0O1A3\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"```Hi Allen,\\n\\nThank you for your patience. We do not keep ready-made items in stock. All our cakes are made to order and can be pre-ordered directly through our website.\\n\\nKind regards,\\nOnkya Services Support```\",\"verbatim\":false}},{\"type\":\"actions\",\"block_id\":\"approval_buttons\",\"elements\":[{\"type\":\"button\",\"action_id\":\"approve_draft\",\"text\":{\"type\":\"plain_text\",\"text\":\":white_check_mark: Approve and send\",\"emoji\":true},\"style\":\"primary\",\"value\":\"{\\\"caseId\\\":\\\"485LFW\\\",\\\"version\\\":1,\\\"resumeUrl\\\":\\\"https:\\/\\/interviews-revealed-species-sperm.trycloudflare.com\\/webhook-waiting\\/1267?signature=95d9cb9387f7897ce70cbf8ae069dd7b954faae5cdc20e3fc2145ad634de3839\\\"}\"}]}]},\"state\":{\"values\":{}},\"response_url\":\"https:\\/\\/hooks.slack.com\\/actions\\/T0A3FC64J3B\\/12464167700917\\/YiSgDcW4HkyZnoB6EFNV0OSY\",\"actions\":[{\"type\":\"button\",\"block_id\":\"approval_buttons\",\"action_id\":\"approve_draft\",\"text\":{\"type\":\"plain_text\",\"text\":\":white_check_mark: Approve and send\",\"emoji\":true},\"value\":\"{\\\"caseId\\\":\\\"485LFW\\\",\\\"version\\\":1,\\\"resumeUrl\\\":\\\"https:\\/\\/interviews-revealed-species-sperm.trycloudflare.com\\/webhook-waiting\\/1267?signature=95d9cb9387f7897ce70cbf8ae069dd7b954faae5cdc20e3fc2145ad634de3839\\\"}\",\"style\":\"primary\",\"action_ts\":\"1793456673.480227\"}]}"
+          },
+          "webhookUrl": "https://interviews-revealed-species-sperm.trycloudflare.com/webhook/4d461a08-492a-461a-8bf1-ad51fa4b7699",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search record: Get resume URL": {
+      "main": [
+        [
+          {
+            "node": "Open case found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open case found?": {
+      "main": [
+        [
+          {
+            "node": "Resume Agent - Insufficient or No Info Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tell Human: case closed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract": {
+      "main": [
+        [
+          {
+            "node": "IF valid reply or click",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF valid reply or click": {
+      "main": [
+        [
+          {
+            "node": "Search record: Get resume URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "64926ae2-a6cc-4bfd-8149-fcb290768b89",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fb9376dba9086dc7e858e8704d3d6b7348e9810aa6b9b360b190f1da90daf6a3"
+  },
+  "nodeGroups": [],
+  "id": "CXDdAkqhJ2GkjtKe",
+  "tags": []
+}
